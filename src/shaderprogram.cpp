@@ -5,7 +5,7 @@
 #include <vector>
 
 
-std::string ShaderProgram::loadShaderSource(const std::string& filePath) {
+std::string ShaderProgram::loadShaderSource(const std::string &filePath) {
     //OpenGL requires the shader to be stored as a const string.
     //Create an input file stream to read from the file.
     std::ifstream shaderFile;
@@ -19,16 +19,16 @@ std::string ShaderProgram::loadShaderSource(const std::string& filePath) {
         shaderStream << shaderFile.rdbuf();
         shaderFile.close();
         return shaderStream.str();
-    } catch (std::ifstream::failure& e) {
+    } catch (std::ifstream::failure &e) {
         std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << filePath << "\n";
         return "";
     }
 }
 
-GLuint ShaderProgram::compileShader(const std::string& source, GLenum shaderType) {
+GLuint ShaderProgram::compileShader(const std::string &source, GLenum shaderType) {
     //Converts the std::string source code into a C-style string (const char*)
     //because OpenGL expects shader source code in this format.
-    const char* shaderCode = source.c_str();
+    const char *shaderCode = source.c_str();
     GLuint shader = glCreateShader(shaderType);
     glShaderSource(shader, 1, &shaderCode, nullptr);
     glCompileShader(shader);
@@ -64,7 +64,7 @@ void ShaderProgram::linkProgram(GLuint vertexShader, GLuint fragmentShader) {
     }
 }
 
-ShaderProgram::ShaderProgram(const std::string& vertexPath, const std::string& fragmentPath) {
+ShaderProgram::ShaderProgram(const std::string &vertexPath, const std::string &fragmentPath) {
     std::string vertexCode = loadShaderSource(vertexPath);
     std::string fragmentCode = loadShaderSource(fragmentPath);
 
@@ -103,7 +103,8 @@ void ShaderProgram::destroy() {
         isDeleted = true;
     }
 }
-void ShaderProgram::setUniform(const std::string& name, int value) const {
+
+void ShaderProgram::setUniform(const std::string &name, int value) const {
     GLint location = glGetUniformLocation(ID, name.c_str());
     if (location == -1) {
         std::cerr << "Warning: uniform '" << name << "' not found in shader.\n";
@@ -112,7 +113,7 @@ void ShaderProgram::setUniform(const std::string& name, int value) const {
     glUniform1i(location, value);
 }
 
-void ShaderProgram::setUniform(const std::string& name, float value) const {
+void ShaderProgram::setUniform(const std::string &name, float value) const {
     GLint location = glGetUniformLocation(ID, name.c_str());
     if (location == -1) {
         std::cerr << "Warning: uniform '" << name << "' not found in shader.\n";
@@ -121,7 +122,7 @@ void ShaderProgram::setUniform(const std::string& name, float value) const {
     glUniform1f(location, value);
 }
 
-void ShaderProgram::setUniform(const std::string& name, const glm::vec3& value) const {
+void ShaderProgram::setUniform(const std::string &name, const glm::vec3 &value) const {
     GLint location = glGetUniformLocation(ID, name.c_str());
     if (location == -1) {
         std::cerr << "Warning: uniform '" << name << "' not found in shader.\n";
@@ -130,7 +131,7 @@ void ShaderProgram::setUniform(const std::string& name, const glm::vec3& value) 
     glUniform3fv(location, 1, glm::value_ptr(value));
 }
 
-void ShaderProgram::setUniform(const std::string& name, const glm::mat4& value) const {
+void ShaderProgram::setUniform(const std::string &name, const glm::mat4 &value) const {
     GLint location = glGetUniformLocation(ID, name.c_str());
     if (location == -1) {
         std::cerr << "Warning: uniform '" << name << "' not found in shader.\n";
@@ -138,15 +139,15 @@ void ShaderProgram::setUniform(const std::string& name, const glm::mat4& value) 
     }
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
 }
-GLuint ShaderProgram::bindTexture2D(const std::string& samplerName,
-                                    const std::string& filePath,
+
+GLuint ShaderProgram::bindTexture2D(const std::string &samplerName,
+                                    const std::string &filePath,
                                     GLint textureUnit,
                                     bool flipVertical,
                                     GLint wrap,
                                     GLint minFilter,
                                     GLint magFilter,
-                                    bool generateMipmaps) const
-{
+                                    bool generateMipmaps) const {
     if (samplerName.empty() || filePath.empty()) {
         std::cerr << "bindTexture2D: empty samplerName or filePath\n";
         return 0;
@@ -157,17 +158,24 @@ GLuint ShaderProgram::bindTexture2D(const std::string& samplerName,
 
     stbi_set_flip_vertically_on_load(flipVertical ? 1 : 0);
     int w = 0, h = 0, ch = 0;
-    unsigned char* data = stbi_load(filePath.c_str(), &w, &h, &ch, 0);
+    unsigned char *data = stbi_load(filePath.c_str(), &w, &h, &ch, 0);
     if (!data) {
         std::cerr << "Failed to load texture: " << filePath << "\n";
         return 0;
     }
 
     GLenum srcFormat = GL_RGB;
-    GLint  internal  = GL_RGB;
-    if (ch == 4) { srcFormat = GL_RGBA; internal = GL_RGBA; }
-    else if (ch == 3) { srcFormat = GL_RGB; internal = GL_RGB; }
-    else if (ch == 1) { srcFormat = GL_RED; internal = GL_RED; }
+    GLint internal = GL_RGB;
+    if (ch == 4) {
+        srcFormat = GL_RGBA;
+        internal = GL_RGBA;
+    } else if (ch == 3) {
+        srcFormat = GL_RGB;
+        internal = GL_RGB;
+    } else if (ch == 1) {
+        srcFormat = GL_RED;
+        internal = GL_RED;
+    }
 
     GLuint texID = 0;
     glGenTextures(1, &texID);
@@ -181,7 +189,8 @@ GLuint ShaderProgram::bindTexture2D(const std::string& samplerName,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
 
     glTexImage2D(GL_TEXTURE_2D, 0, internal, w, h, 0, srcFormat, GL_UNSIGNED_BYTE, data);
-    if (generateMipmaps) glGenerateMipmap(GL_TEXTURE_2D);
+    if (generateMipmaps)
+        glGenerateMipmap(GL_TEXTURE_2D);
 
     stbi_image_free(data);
 
@@ -196,16 +205,15 @@ GLuint ShaderProgram::bindTexture2D(const std::string& samplerName,
     return texID;
 }
 
-GLuint ShaderProgram::bindCubeMap(const std::string& samplerName,
-                   const std::vector<std::string>& faces,
-                   GLint textureUnit,
-                   bool flipVertical,
-                   GLint wrap,
-                   GLint minFilter,
-                   GLint magFilter) const{
-
+GLuint ShaderProgram::bindCubeMap(const std::string &samplerName,
+                                  const std::vector<std::string> &faces,
+                                  GLint textureUnit,
+                                  bool flipVertical,
+                                  GLint wrap,
+                                  GLint minFilter,
+                                  GLint magFilter) const {
     use();
-    stbi_set_flip_vertically_on_load(flipVertical? 1 : 0);
+    stbi_set_flip_vertically_on_load(flipVertical ? 1 : 0);
 
     GLuint texID = 0;
     glGenTextures(1, &texID);
@@ -214,17 +222,24 @@ GLuint ShaderProgram::bindCubeMap(const std::string& samplerName,
     glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
 
     int w = 0, h = 0, ch = 0;
-    for(int i = 0; i < faces.size(); ++i){
-        unsigned char* data = stbi_load(faces[i].c_str(), &w, &h, &ch, 0);
-        if(!data){
+    for (int i = 0; i < faces.size(); ++i) {
+        unsigned char *data = stbi_load(faces[i].c_str(), &w, &h, &ch, 0);
+        if (!data) {
             std::cerr << "Failed to load cubmap face: " << faces[i] << std::endl;
             break;
         }
         GLenum srcFormat = GL_RGB;
-        GLint  internal  = GL_RGB;
-        if (ch == 4) { srcFormat = GL_RGBA; internal = GL_RGBA; }
-        else if (ch == 3) { srcFormat = GL_RGB; internal = GL_RGB; }
-        else if (ch == 1) { srcFormat = GL_RED; internal = GL_RED; }
+        GLint internal = GL_RGB;
+        if (ch == 4) {
+            srcFormat = GL_RGBA;
+            internal = GL_RGBA;
+        } else if (ch == 3) {
+            srcFormat = GL_RGB;
+            internal = GL_RGB;
+        } else if (ch == 1) {
+            srcFormat = GL_RED;
+            internal = GL_RED;
+        }
 
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<GLenum>(i),
                      0, internal, w, h, 0,
@@ -240,13 +255,11 @@ GLuint ShaderProgram::bindCubeMap(const std::string& samplerName,
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, magFilter);
 
     GLint loc = glGetUniformLocation(ID, samplerName.c_str());
-    if(loc >= 0){
+    if (loc >= 0) {
         glUniform1i(loc, textureUnit);
-    }else{
-        std::cerr <<"Warning: samplercube uniform not found!" << std::endl;
+    } else {
+        std::cerr << "Warning: samplercube uniform not found!" << std::endl;
     }
 
     return texID;
-
-
 }
