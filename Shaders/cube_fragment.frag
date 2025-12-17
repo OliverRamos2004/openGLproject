@@ -6,6 +6,9 @@ in vec3 Normal;
 in vec3 FragPos;
 in vec2 TexCoords;
 
+uniform float exposure;
+
+
 // ---------------------------------------------------------------------
 // Structs (same layout as in your C++ config)
 // ---------------------------------------------------------------------
@@ -100,6 +103,12 @@ void main()
     vec3 viewDir = normalize(viewPos - FragPos);
 
     vec3 result = vec3(0.0);
+
+    vec3 color = result; // or whatever your final lighting variable is
+    color = vec3(1.0) - exp(-color * exposure);
+    color = pow(color, vec3(1.0 / 2.2));
+    FragColor = vec4(color, 1.0);
+
 
     // Directional lights
     for (int i = 0; i < numDirLights; ++i) {
