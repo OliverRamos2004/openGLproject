@@ -104,11 +104,6 @@ void main()
 
     vec3 result = vec3(0.0);
 
-    vec3 color = result; // or whatever your final lighting variable is
-    color = vec3(1.0) - exp(-color * exposure);
-    color = pow(color, vec3(1.0 / 2.2));
-    FragColor = vec4(color, 1.0);
-
 
     // Directional lights
     for (int i = 0; i < numDirLights; ++i) {
@@ -139,8 +134,12 @@ void main()
     //    - border (bright spec map)   : more env reflection
     vec3 finalColor = mix(result, envColor, mask);
 
+    // exposure + gamma MUST be last
+    finalColor = vec3(1.0) - exp(-finalColor * exposure);
+    finalColor = pow(finalColor, vec3(1.0 / 2.2));
+
     FragColor = vec4(finalColor, material.alpha);
-    //FragColor = texture(material.diffuse, TexCoords);
+
 }
 
 // ---------------------------------------------------------------------

@@ -76,29 +76,6 @@ int main() {
     //    createShadowMap(depthFBO, depthMap, SHADOW_WIDTH, SHADOW_HEIGHT);
     createPointShadowMap(pointDepthFBO, pointDepthCubemap, POINT_SHADOW_SIZE);
 
-    //    glGenFramebuffers(1, &depthFBO);
-    //
-    //    glGenTextures(1, &depthMap);
-    //    glBindTexture(GL_TEXTURE_2D, depthMap);
-    //    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
-    //                 SHADOW_WIDTH, SHADOW_HEIGHT, 0,
-    //                 GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-    //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    //
-    //    float borderColor[] = {1.0, 1.0, 1.0, 1.0};
-    //    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-    //
-    //    glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
-    //    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-    //    glDrawBuffer(GL_NONE);
-    //    glReadBuffer(GL_NONE);
-    //    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-    //    glViewport(0, 0, 400, 300);
 
     std::vector<std::string> faces
     {
@@ -180,7 +157,7 @@ int main() {
     cfg.pointLights[1].position = glm::vec3(4.0f, 5.0f, 0.0f);
 
     for (auto &pl: cfg.pointLights) {
-        pl.ambient = glm::vec3(0.02f);
+        pl.ambient = glm::vec3(0.15f); // ambient light
         pl.diffuse = glm::vec3(0.18f);
         pl.specular = glm::vec3(0.35f);
         pl.linear = 0.14f;
@@ -246,23 +223,31 @@ int main() {
             pointDepthShader.setUniform("model", model);
             plane.draw();
 
-            // draw cubes
             // draw statue (shadow caster)
             model = glm::mat4(1.0f);
-            model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-            model = glm::scale(model, glm::vec3(1.0f)); // tune!
+            model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+            model = glm::scale(model, glm::vec3(0.01f));   // tune
             pointDepthShader.setUniform("model", model);
             statue.draw();
 
+
+
             // draw two benches (shadow casters)
-            for (int b = 0; b < 2; b++) {
-                model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(-2.0f + 4.0f * b, 0.0f, 2.5f));
-                model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0, 1, 0));
-                model = glm::scale(model, glm::vec3(1.0f)); // tune!
-                pointDepthShader.setUniform("model", model);
+            auto drawBenchShadow = [&](glm::vec3 pos, float yawDeg)
+            {
+                glm::mat4 m(1.0f);
+                m = glm::translate(m, pos);
+                m = glm::rotate(m, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+                m = glm::rotate(m, glm::radians(yawDeg), glm::vec3(0, 1, 0));
+                m = glm::scale(m, glm::vec3(0.01f));
+                pointDepthShader.setUniform("model", m);
                 bench.draw();
-            }
+            };
+
+            drawBenchShadow(glm::vec3(-2.0f, 0.0f, 2.5f), 180.0f);
+            drawBenchShadow(glm::vec3( 2.0f, 0.0f, 2.5f), 180.0f);
+
         }
 
 
@@ -291,7 +276,7 @@ int main() {
         cubeShader.setUniform("viewPos", camera.Position);
 
         // Exposure for mood (only if your shader supports it)
-        cubeShader.setUniform("exposure", 0.8f);
+        cubeShader.setUniform("exposure", 2.0f);
 
         // ---------- FLOOR ----------
         glActiveTexture(GL_TEXTURE0);
@@ -325,19 +310,31 @@ int main() {
         drawWall(glm::vec3(6.0f, 2.5f, 0.0f), glm::vec3(0.2f, 5.0f, 12.0f));
 
         // ---------- BENCHES ----------
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(-2.0f, 0.0f, 2.5f));
-        model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0, 1, 0));
-        model = glm::scale(model, glm::vec3(1.0f)); // tune
-        cubeShader.setUniform("model", model);
-        bench.draw();
 
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(2.0f, 0.0f, 2.5f));
-        model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0, 1, 0));
-        model = glm::scale(model, glm::vec3(1.0f)); // tune
-        cubeShader.setUniform("model", model);
-        bench.draw();
+
+        auto drawBench = [&](glm::vec3 pos, float yawDeg)
+        {
+            glm::mat4 m(1.0f);
+            m = glm::translate(m, pos);
+
+            // Stand-up fix (most common for Z-up OBJs)
+            m = glm::rotate(m, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+
+            // Face it (optional)
+            m = glm::rotate(m, glm::radians(yawDeg), glm::vec3(0, 1, 0));
+
+            // Scale fix (match statue scale style)
+            m = glm::scale(m, glm::vec3(0.01f));   // try 0.01, then 0.005 or 0.02
+
+            cubeShader.setUniform("model", m);
+            bench.draw();
+        };
+
+        // two benches
+        drawBench(glm::vec3(-2.0f, 0.0f, 2.5f), 180.0f);
+        drawBench(glm::vec3( 2.0f, 0.0f, 2.5f), 180.0f);
+
+
 
         // ---------- PEDESTAL (simple cube) ----------
         model = glm::mat4(1.0f);
@@ -349,8 +346,14 @@ int main() {
         // ---------- STATUE ----------
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(1.0f)); // tune!
+        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+        model = glm::scale(model, glm::vec3(0.01f));   // start here: 0.01, then try 0.005 or 0.02
         cubeShader.setUniform("model", model);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, plane_diffuse);   // temporary: wood; replace later with marble
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, plane_specular);
+
         statue.draw();
 
 
