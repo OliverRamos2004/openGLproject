@@ -6,9 +6,6 @@ in vec3 Normal;
 in vec3 FragPos;
 in vec2 TexCoords;
 
-uniform float exposure;
-
-
 // ---------------------------------------------------------------------
 // Structs (same layout as in your C++ config)
 // ---------------------------------------------------------------------
@@ -90,7 +87,7 @@ float near = 0.1;
 float far  = 100.0;
 float LinearizeDepth(float depth)
 {
-    float z = depth * 2.0 - 1.0;// back to NDC
+    float z = depth * 2.0 - 1.0; // back to NDC
     return (2.0 * near * far) / (far + near - z * (far - near));
 }
 
@@ -133,16 +130,8 @@ void main()
     //    - border (bright spec map)   : more env reflection
     vec3 finalColor = mix(result, envColor, mask);
 
-    vec3 finalRGB = finalColor; // <-- REPLACE 'result' with your final computed lighting color variable
-
-    // tone-map using exposure (makes dim scenes readable)
-    finalRGB = vec3(1.0) - exp(-finalRGB * exposure);
-
-    // gamma correction (prevents dim scenes from looking muddy)
-    finalRGB = pow(finalRGB, vec3(1.0 / 2.2));
-
-    FragColor = vec4(finalRGB, material.alpha); // or 1.0 if you don’t use alpha
-
+    FragColor = vec4(finalColor, material.alpha);
+    //FragColor = texture(material.diffuse, TexCoords);
 }
 
 // ---------------------------------------------------------------------
@@ -176,9 +165,9 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 
     float distance    = length(light.position - fragPos);
     float attenuation = 1.0 /
-    (light.constant +
-    light.linear * distance +
-    light.quadratic * (distance * distance));
+        (light.constant +
+         light.linear * distance +
+         light.quadratic * (distance * distance));
 
     vec3 texDiffuse = vec3(texture(material.diffuse, TexCoords));
     vec3 texSpec    = vec3(texture(material.specular, TexCoords));
@@ -192,7 +181,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     specular *= attenuation;
 
     //return ambient + diffuse + specular;
-    // Apply point light shadow
+     // Apply point light shadow
     float shadow = PointShadowCalculation(fragPos, light.position);
 
     // Ambient stays unshadowed
@@ -210,9 +199,9 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 
     float distance    = length(light.position - fragPos);
     float attenuation = 1.0 /
-    (light.constant +
-    light.linear * distance +
-    light.quadratic * (distance * distance));
+        (light.constant +
+         light.linear * distance +
+         light.quadratic * (distance * distance));
 
     float theta   = dot(lightDir, normalize(-light.direction));
     float epsilon = light.cutOff - light.outerCutOff;
