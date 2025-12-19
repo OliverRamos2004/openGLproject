@@ -7,6 +7,10 @@ in vec3 FragPos;
 in vec2 TexCoords;
 
 uniform float exposure;
+uniform float envMix;   // 0 = no skybox reflection, 1 = full
+uniform bool unlit;
+
+
 
 
 // ---------------------------------------------------------------------
@@ -104,6 +108,15 @@ void main()
 
     vec3 result = vec3(0.0);
 
+    vec3 albedo = texture(material.diffuse, TexCoords).rgb;
+
+    // If this object is "unlit" (paintings), just show the texture color.
+    if (unlit) {
+        FragColor = vec4(albedo, material.alpha);
+        return;
+    }
+
+
 
     // Directional lights
     for (int i = 0; i < numDirLights; ++i) {
@@ -126,13 +139,13 @@ void main()
     vec3 R = reflect(-viewDir, norm);
     vec3 envColor = texture(skybox, R).rgb;
 
-    // 3) Use specular map as reflection mask (bright = more reflective)
-    float mask = texture(material.specular, TexCoords).r;
+    // You're feeding roughness into material.specular right now.
+    // Rough walls should reflect LESS, so invert roughness -> reflectionMask.
+    float rough = texture(material.specular, TexCoords).r;
+    float reflectionMask = (1.0 - rough) * envMix;
 
-    // 4) Blend Phong result and environment using the mask
-    //    - center wood (dark spec map) : pure Phong
-    //    - border (bright spec map)   : more env reflection
-    vec3 finalColor = mix(result, envColor, mask);
+    vec3 finalColor = mix(result, envColor, reflectionMask);
+
 
     // exposure + gamma MUST be last
     finalColor = vec3(1.0) - exp(-finalColor * exposure);
