@@ -306,11 +306,11 @@ int main() {
     cfg.spotLights[0].cutOff = glm::cos(glm::radians(10.0f));
     cfg.spotLights[0].outerCutOff = glm::cos(glm::radians(16.0f));
 
-    cfg.spotLights[0].ambient = glm::vec3(-0.5f);
+    cfg.spotLights[0].ambient = glm::vec3(0.0f);
     cfg.spotLights[0].diffuse = glm::vec3(0.30f, 0.28f, 0.25f);
     cfg.spotLights[0].specular = glm::vec3(0.12f);
 
-    cfg.spotLights[0].constant = 0.5f;
+    cfg.spotLights[0].constant = 1.0f;
     cfg.spotLights[0].linear = 0.14f;
     cfg.spotLights[0].quadratic = 0.07f;
 
@@ -480,7 +480,7 @@ int main() {
         cubeShader.setUniform("viewPos", camera.Position);
 
         // Exposure for mood (only if your shader supports it)
-        cubeShader.setUniform("exposure", 2.0f);
+        cubeShader.setUniform("exposure", 0.65f);
         cubeShader.setUniform("envMix", 0.0f); // default: walls should NOT reflect skybox
 
 
